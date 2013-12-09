@@ -73,10 +73,6 @@ static XtResource resources[] = {
     	offset (backing_store), XtRString, "default"},
     {XtNshapeWindow, XtCShapeWindow, XtRBoolean, sizeof (Boolean),
 	offset (shape_window), XtRImmediate, (XtPointer) TRUE},
-#ifdef XRENDER
-    {XtNrender, XtCBoolean, XtRBoolean, sizeof(Boolean),
-	offset(render), XtRImmediate, (XtPointer) TRUE },
-#endif
     {XtNdistance, XtCBoolean, XtRBoolean, sizeof(Boolean),
 	offset(distance), XtRImmediate, (XtPointer) FALSE },
 };
@@ -124,9 +120,6 @@ static void Initialize (
     XtGCMask	valuemask;
     XGCValues	myXGCV;
     int shape_event_base, shape_error_base;
-#ifdef XRENDER
-    enum EyesPart i;
-#endif
 
     /*
      * set the colors if reverse video; these are the colors used:
@@ -182,21 +175,6 @@ static void Initialize (
     w->eyes.shape_mask = 0;
     w->eyes.gc[PART_SHAPE] = NULL;
 
-#ifdef XRENDER
-    for (i = 0; i < PART_SHAPE; i ++) {
-	XColor c;
-	XRenderColor rc;
-
-	c.pixel = w->eyes.pixel[i];
-	XQueryColor(XtDisplay (w), w->core.colormap, &c);
-
-	rc.red = c.red;
-	rc.green = c.green;
-	rc.blue = c.blue;
-	rc.alpha = -1;
-	w->eyes.fill[i] = XRenderCreateSolidFill(XtDisplay (w), &rc);
-    }
-#endif
 }
 
 static void
@@ -219,57 +197,6 @@ drawEllipse(EyesWidget w, enum EyesPart part,
 		       (int)pos.width+2, (int)pos.height+2);
 	return;
     }
-#ifdef XRENDER
-    if (w->eyes.render && part != PART_SHAPE && (!w->eyes.shape_window ||
-						 part != PART_OUTLINE) &&
-	w->eyes.picture) {
-	int n, i;
-	double hd, c, s, sx, sy, x, y, px, py;
-	XPointDouble *p;
-
-	pos.x = pos.x + pos.width/2.0;
-	pos.y = pos.y + pos.height/2.0;
-
-	/* determine number of segments to draw */
-	hd = hypot(pos.width, pos.height)/2;
-	n = (M_PI / acos(hd/(hd+1.0))) + 0.5;
-	if (n < 2) n = 2;
-
-	c = cos(M_PI/n);
-	s = sin(M_PI/n);
-	sx = -(pos.width*s)/pos.height;
-	sy = (pos.height*s)/pos.width;
-
-	n *= 2;
-	p = Xmalloc(sizeof(*p)*n);
-	if (!p)
-	    return;
-	x = 0;
-	y = pos.height/2.0;
-	for (i = 0; i < n; i ++)
-	{
-	    p[i].x = x + pos.x;
-	    p[i].y = y + pos.y;
-	    px = x;
-	    py = y;
-	    x = c*px + sx*py;
-	    y = c*py + sy*px;
-	}
-
-	if (oldx != TPOINT_NONE || oldy != TPOINT_NONE)
-	    drawEllipse(w, PART_CLEAR, oldx, oldy,
-			TPOINT_NONE, TPOINT_NONE, diam);
-
-	XRenderCompositeDoublePoly(XtDisplay(w), PictOpOver,
-				   w->eyes.fill[part], w->eyes.picture,
-				   XRenderFindStandardFormat(XtDisplay(w),
-							     PictStandardA8),
-				   0, 0, 0, 0, p, n, 0);
-
-	Xfree(p);
-	return;
-    }
-#endif
     if (oldx != TPOINT_NONE || oldy != TPOINT_NONE)
 	drawEllipse(w, PART_CLEAR, oldx, oldy,
 		    TPOINT_NONE, TPOINT_NONE, diam);
@@ -424,9 +351,6 @@ drawEye(EyesWidget w, TPoint newpupil, int num)
     xnewpupil.x = Xx(newpupil.x, newpupil.y, &w->eyes.t);
     xnewpupil.y = Xy(newpupil.x, newpupil.y, &w->eyes.t);
     if (
-#ifdef XRENDER
-	w->eyes.picture ? !TPointEqual(w->eyes.pupil[num], newpupil) :
-#endif
 	!XPointEqual(xpupil, xnewpupil)) {
 	TPoint oldpupil = w->eyes.pupil[num];
 	w->eyes.pupil[num] = newpupil;
@@ -503,12 +427,6 @@ static void Resize (Widget gw)
  		    	w->core.height, 0,
 		    	W_MIN_X, W_MAX_X,
 		    	W_MIN_Y, W_MAX_Y);
-#ifdef XRENDER
-	if (w->eyes.picture) {
-	    XRenderFreePicture(dpy, w->eyes.picture);
-	    w->eyes.picture = 0;
-	}
-#endif
     	if (w->eyes.shape_window) {
 	    w->eyes.shape_mask = XCreatePixmap (dpy, XtWindow (w),
 	    	    w->core.width, w->core.height, 1);
@@ -530,17 +448,6 @@ static void Resize (Widget gw)
 		       	       x, y, w->eyes.shape_mask, ShapeSet);
 	    XFreePixmap (dpy, w->eyes.shape_mask);
     	}
-#ifdef XRENDER
-	if (w->eyes.render) {
-	    XRenderPictureAttributes pa;
-	    XRenderPictFormat *pf;
-	    pf = XRenderFindVisualFormat(dpy,
-					 DefaultVisualOfScreen(w->core.screen));
-	    if (pf)
-		w->eyes.picture = XRenderCreatePicture(dpy, XtWindow (w),
-						       pf, 0, &pa);
-	}
-#endif
     }
 }
 
@@ -572,10 +479,6 @@ static void Destroy (Widget gw)
 	XtRemoveTimeOut (w->eyes.interval_id);
      for (i = 0; i < PART_MAX; i ++)
 	     XtReleaseGC(gw, w->eyes.gc[i]);
-#ifdef XRENDER
-     if (w->eyes.picture)
-	     XRenderFreePicture (XtDisplay(w), w->eyes.picture);
-#endif
 }
 
 /* ARGSUSED */
