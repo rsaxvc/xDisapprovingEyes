@@ -86,9 +86,9 @@ static XtResource resources[] = {
 
 # define EYE_X(n)	((n) * 2.0)
 # define EYE_Y(n)	(0.0)
-# define EYE_OFFSET	(0.1)	/* padding between eyes */
-# define EYE_THICK	(0.175)	/* thickness of eye rim */
-# define BALL_DIAM	(0.3)
+# define EYE_OFFSET	(0.5)	/* padding between eyes */
+# define EYE_THICK	(0.125)	/* thickness of eye rim */
+# define BALL_DIAM	(0.2)
 # define BALL_PAD	(0.175)
 # define EYE_DIAM	(2.0 - (EYE_THICK + EYE_OFFSET) * 2)
 # define BALL_DIST	((EYE_DIAM - BALL_DIAM) / 2.0 - BALL_PAD)
