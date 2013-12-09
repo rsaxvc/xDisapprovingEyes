@@ -94,8 +94,8 @@ static XtResource resources[] = {
 # define BALL_DIST	((EYE_DIAM - BALL_DIAM) / 2.0 - BALL_PAD)
 # define W_MIN_X	(-1.0 + EYE_OFFSET)
 # define W_MAX_X	(3.0 - EYE_OFFSET)
-# define W_MIN_Y	(-1.0 + EYE_OFFSET)
-# define W_MAX_Y	(1.0 - EYE_OFFSET)
+# define W_MIN_Y	(-1.5 + EYE_OFFSET)
+# define W_MAX_Y	(1.5 - EYE_OFFSET)
 
 # define TPOINT_NONE	(-1000)	/* special value meaning "not yet set" */
 # define TPointEqual(a, b)  ((a).x == (b).x && (a).y == (b).y)
