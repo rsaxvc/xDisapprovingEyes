@@ -201,12 +201,19 @@ drawEllipse(EyesWidget w, enum EyesPart part,
 	drawEllipse(w, PART_CLEAR, oldx, oldy,
 		    TPOINT_NONE, TPOINT_NONE, diam);
 
+    XFillRectangle(XtDisplay(w),
+	     part == PART_SHAPE ? w->eyes.shape_mask : XtWindow(w),
+	     w->eyes.gc[part],
+	     (int)(pos.x + 0.5), (int)(pos.y + 0.5),
+	     (int)(pos.width + 0.0), (int)(pos.height + 0.0));
+/*
     XFillArc(XtDisplay(w),
 	     part == PART_SHAPE ? w->eyes.shape_mask : XtWindow(w),
 	     w->eyes.gc[part],
 	     (int)(pos.x + 0.5), (int)(pos.y + 0.5),
 	     (int)(pos.width + 0.0), (int)(pos.height + 0.0),
 	     90*64, 360*64);
+*/
 }
 
 
